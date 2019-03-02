@@ -1,4 +1,6 @@
-# [java core](https://github.com/yancheng1022/notes/blob/master/docs/javaCore.md?_blank)
+# [java core ](https://github.com/yancheng1022/notes/blob/master/docs/javaCore.md)
+
+# <a href="https://github.com/yancheng1022/notes/blob/master/docs/javaCore.md" target="_blank">java core</a>
 
 # [java EE](https://github.com/yancheng1022/notes/blob/master/docs/javaEE.md?_blank)
 
