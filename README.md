@@ -1,1 +1,1 @@
-#[java core]()
+[#java core](https://github.com/yancheng1022/notes/blob/master/docs/javaCore.md)
