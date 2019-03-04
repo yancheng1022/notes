@@ -28,7 +28,7 @@
 
 [15. mybatis动态sql 及其原理？](#15)
 
-[16. mybatis 怎么解决第一个<if>为null导致的前and的问题](# 16)
+[16. mybatis 怎么解决第一个<if>为null导致的前and的问题](#16)
 
 [17. mybatis如何实现模糊查询？](#17)
 
@@ -39,6 +39,32 @@
 [20. 讲一下dubbo是什么？](#20)
 
 [21. dubbo怎样向zookeeper注册和服务调用](#21)
+
+[22.dubbo和springcloud的区别？](#22)
+
+[23. 转发和重定向的区别？](#23)
+
+[24. servlet生命周期](#24)
+
+[25. CAP定理和base理论？](#25)
+
+[26. redis基本数据类型？](#26)
+
+[27. redis持久化方式？优缺点？](#27)
+
+[28. redis 哨兵模式？](#28)
+
+[29. 介绍一下单点登陆和它的实现CAS的原理？](#29)
+
+[30. 怎样搭建cas服务器？客户端怎样实现？](#30)
+
+[31. 什么是全文检索？如何实现全文检索](#31)
+
+[32.什么是solr？](#32)
+
+[33. 怎么搭建solr服务器？](#33)
+
+[34. 客户端怎么使用solr进行查询服务？](#34)
 
 ### <span id="1">1.spring中的aop？</span>
 
@@ -394,3 +420,207 @@ public class LogInterceptor {
 ​		<dubbo:annotation package="cn.itcast.dubboxdemo.service" /> 
 
 ​	（3）在服务提供类进行@service注解，调用服务的地方用@refence注解
+
+
+
+### <span id="22">22.dubbo和springcloud的区别？</span>
+
+​	（1）dubbo基于RPC服务调用，springcloudr基于REST API调用（RPC是以方法为中心，REST API是以资源为中心（通过POST GET PUT DELETE操作资源））
+
+​	（2）Dubbo服务注册中心一般用zookeeper，spring cloud一般用Eureka
+
+
+
+### <span id="23">23. 转发和重定向的区别？</span>
+
+​	（1）转发在服务器端完成，重定向在客户端完成
+
+​	（2）转发是一次请求，重定向是两次请求
+
+​	（3）转发地址栏没有变化，重定向地址栏有变化
+
+
+
+### <span id="24">24. servlet生命周期</span>
+
+​	（1）在容器启动或第一次访问servlet时进行**加载和实例化**（load-on-startup）（只实例化一次，说明servlet是单例的  load-on-start-up为负数，第一次请求被创建  为0或正数，容器启动时被创建）
+
+​	（2）Servlet实例化后调用init（）**初始化**该servlet对象（建立数据库连接等）
+
+​	（3）****处理请求**。调用service方法进行处理
+
+​	（4）****销毁** 容器关闭时调用destory（）方法 释放资源
+
+
+
+### <span id="25">25. CAP定理和BASE理论?</span>
+
+​	CAP:对于一个分布式系统，不能同时满足一致性（同一时间数据相同），可用性（每个请求不管成功失败都有响应），分隔容忍（部分服务挂掉不影响系统正常服务）
+
+​	Base理论：解决数据强一致性引起可用性降低的方案（放松对一致性的要求）
+
+ 
+
+### <span id="26">26. redis基本数据类型？</span>
+
+![img](../imgs/1.png)
+
+
+
+### <span id="27">27. redis持久化方式？优缺点？</span>
+
+​	**rdb：**
+
+​	（1）概念：对redis数据周期性的持久化
+
+​	（2）触发方式：手动触发：SAVE 阻塞当前redis服务直到rdb完成
+
+​							BGSAVE  fork出一个子进程，在后台完成持久化
+
+​                		     自动触发：save 900 1 save 300 10 save 60 1000
+
+​        （3）优点：（1）每个数据文件代表某时刻redis中数据，很适合备份
+
+​			     （2）对读写服务影响小，fork出子进程操作
+
+​                             （3）恢复大数据时比aof快
+
+​        （4）缺点：可能丢失最后一次快照后的所有修改
+
+​	**Aof：**
+
+​	（1）概念：以每条写命令作为日志，以追加的形式写入日志文件
+
+​	（2）优点：可以实现秒级同步
+
+​	（3）缺点：相同数据量的aof文件大于rdb文件，占用磁盘执行效率低于rdb
+
+
+
+### <span id="28">28. redis哨兵模式？</span>
+
+​	哨兵是一个独立的进程，通过发送命令，等待redis服务器响应，从而监控运行的多个redis实例。当监控到master宕机，自动将slaver切换到master，然后通知给其它从服务器
+
+​	配置：sentinel.conf中 ： setinel monitor mymaster（服务器名）+ip+端口+数字（代表几个哨兵同意就切换）
+
+
+
+### <span id="29">29. 介绍一下单点登陆</span>(sso)？和它的实现CAS的原理？
+
+​	Single sign on，简称sso。单点登陆。在分布式应用系统中，只要登陆一次，就可以访问其他相互信任的应用系统
+
+​        CAS是单点登陆常用的一个实现方案，原理如下：
+
+​	（1）用户访问cas客户端，首先经过一个过滤器AuthenticationFilter，通过判断是否有session判断是否登陆，没登陆则重定向到cas服务端
+
+​	（2）cas服务端验证请求是否携带TGC（cookie中的value），如果携带并且合法则直接返回ST（service ticket 小令牌），否则返回登陆页面，用户输入账号密码验证成功后返回ST，并生成一个TGC写入cookie，同时生成一个TGT写入自己的缓存（TGT的id就是TGC）
+
+​	（3）浏览器拿到ST 重定向到 cas客户端并携带ST，cas客户端携带该ST请求cas服务端认证该ST,认证成功后会在cas客户端创建session保留用户信息，以后该用户访问该客户端就会直接返回用户信息而不用再请求cas服务端。对于其它客户端，还是会请求到cas服务器，但是因为cookie中携带TGC 同时该TGC生成的TGT的id存在则验证通过，签发一个ST给这个客户端，然后再重复前面的步骤
+
+​	
+
+### <span id="30">30. 怎样搭建cas服务器？客户端怎样实现</span>
+
+​	**cas服务器**
+
+​		（1）cas项目的war包直接部署到tomcat
+
+​		（2）去除https认证（HTTPS需要安全证书，需要向特定机构申请和购买）
+
+​		（3）自定义认证处理器（默认认证管理器使用的是用户名密码写死在配置文件中的处理器）
+
+​		![img](../imgs/2.png)		
+
+​		（4）自定义登陆表单（替换view下的login.jsp  并替换form）			
+
+​	
+
+​	**cas客户端**
+
+​		（1）引入cas依赖
+
+​		（2）web.xml  配置一系列的过滤器（CASFilter验证用户名密码  cas validation Filter令牌验证过滤器等）
+
+
+
+### <span id="31">31. 什么是全文检索？如何实现全文检索？</span>
+
+​	先读取要分析的内容，对内容进行分词，将分好的词加入索引文件。这样再查找某个词时很快能定位该词出现的位置
+
+​	使用Lucene 。Lucene是全文检索工具包。提供文本分析引擎（没中文），索引引擎，查询引擎
+
+
+
+### <span id="32">32. 什么是solr？</span>
+
+​	solr是基于lucene的全文检索服务器。对外提供api接口，用户可以通过http请求提交一定格式的xml文件，生成索引。也可以通过get请求得到xml格式的返回结果
+
+
+
+### <span id="33">33. 怎么搭建一个solr服务器？</span>
+
+​	（1）将solr项目war包放到tomcat解压
+
+​	（2）配置中文分词器（IK）
+
+​			1）把IK相关文件拷到lib文件夹下
+
+​			2）schema.xml下配置
+
+​			
+
+```xml
+	<!--配置中文分词器-->
+	<fieldType name="text_ik" class="solr.TextField">
+		<analyzer class="org.wltea.analyzer.lucene.IKAnalyzer"/>
+	</fieldType>
+
+	<!--配置几个域，这几个就支持中文分词了，当然自己根据需求进行创建即可-->
+	<field name="title_ik" type="text_ik" indexed="true" stored="true"/>
+	<field name="content_ik" type="text_ik" indexed="true" stored="false" multiValued="true"/
+
+```
+
+​	（3）批量导入数据库中的数据
+
+​			1）再solrconfig.xml中添加数据导入处理器
+
+```xml
+<requestHandler name="/dataimport" 
+   class="org.apache.solr.handler.dataimport.DataImportHandler">
+	<lst name="defaults">
+		<str name="config">data-config.xml</str>
+	</lst>
+  </requestHandler>
+
+```
+
+​			2）config目录下添加一个data-config.xml（与上面一步配置的名字要一致）主要是配数据源
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<dataConfig>
+<dataSource type="JdbcDataSource"
+			driver="com.mysql.jdbc.Driver"
+			url="jdbc:mysql://localhost:3306/需要导入数据的数据库名"
+			user="数据库账号"
+			password="数据库密码"/>
+</dataConfig>
+
+```
+
+​		3）schema.xml中配置域，代表数据库导入到solr中数据的字段内容
+
+
+
+### <span id="34">34. 客户端怎么使用solr进行查询服务？</span>
+
+​	（1）引入spring data solr依赖
+
+​	（2）创建solr.xml文件
+
+![](../imgs/3.png)
+
+​	（3）实体类属性加注解（@field("item_title")）
+
+​	（4）搜索：Query query = new Query("*:*");  solrTemplate.queryForPage(query,Item.class)
