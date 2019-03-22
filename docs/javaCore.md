@@ -34,6 +34,8 @@
 
 [18. 死锁必要条件？](#18)
 
+[19. String s = new String("xyz")创建了几个对象？](#19)
+
 ### <span id="1">1. Lock和synchronized的区别?</span>
 
 ​	（1）synchronized遇到异常时自动释放锁，lock不会（所以需要在finally中lock.unlock释放锁）
@@ -238,7 +240,13 @@
 
 ​	
 
+### <span id="19">19. String     s= new    String(   "xyz   ")创建了几个对象？</span>
 
+​	  一个或两个
+
+​	字符串常量池如果没有xyz  就创建， 然后堆上new string("xyz")----共两个
+
+​	如果字符串常量池中有xyz，只在对上创建对象-----共一个
 
 
 
