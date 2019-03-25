@@ -1,3 +1,7 @@
+
+
+
+
 [一.helloworld](#1)
 
 [二.引入配置的两种方式？](#2)
@@ -13,6 +17,10 @@
 [七. springboot静态资源映射规则？](#7)
 
 [八.thymeleaf的使用？](#8)
+
+[九. 整合mybatis？](#9)
+
+[十. springBoot原理？](#10)
 
 #### <span id="1">一. helloworld </span>
 
@@ -310,3 +318,168 @@ spring.thymeleaf.cache=false
 ```
 
    （2）ctrl+f9重新编译
+
+
+
+#### <span id="9">9. 整合mybatis？</span>
+
+1.引入依赖
+
+```xml
+	<dependency>
+		<groupId>org.mybatis.spring.boot</groupId>
+		<artifactId>mybatis-spring-boot-starter</artifactId>
+		<version>1.3.1</version>
+	</dependency>
+```
+2.整合数据源（Druid）
+
+springboot默认使用默认是用org.apache.tomcat.jdbc.pool.DataSource作为数据源
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid</artifactId>
+    <version>1.1.8</version>
+</dependency>
+
+```
+
+```yaml
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://192.168.15.22:3306/jdbc
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidSource
+    
+    initialSize: 5
+    minIdle: 5
+    ...
+```
+
+```java
+//导入druid数据源
+@Configuration
+public class DruidConfig {
+
+    @ConfigurationProperties(prefix = "spring.datasource")
+    @Bean
+    public DataSource druid(){
+       return  new DruidDataSource();
+    }
+}
+```
+
+配置文件中initialSize等属性默认是不能加载进Druid数据源中的（因为是第三方），需要通过bean的方式注入
+
+3.编写sql
+
+```java
+@Mapper
+public interface DepartmentMapper {
+
+    @Select("select * from department where id=#{id}")
+    public Department getDeptById(Integer id);
+
+    @Delete("delete from department where id=#{id}")
+    public int deleteDeptById(Integer id);
+
+    @Options(useGeneratedKeys = true,keyProperty = "id")
+    @Insert("insert into department(departmentName) values(#{departmentName})")
+    public int insertDept(Department department);
+
+    @Update("update department set departmentName=#{departmentName} where id=#{id}")
+    public int updateDept(Department department);
+}
+```
+
+
+
+#### <span id="10">十. springBoot原理？</span>
+
+1.启动流程
+
+（1）创建springApplication对象
+
+```java
+initialize(sources);
+private void initialize(Object[] sources) {
+    //保存主配置类
+    if (sources != null && sources.length > 0) {
+        this.sources.addAll(Arrays.asList(sources));
+    }
+    //判断当前是否一个web应用
+    this.webEnvironment = deduceWebEnvironment();
+    //从类路径下找到META-INF/spring.factories配置的所有ApplicationContextInitializer；然后保存起来
+    setInitializers((Collection) getSpringFactoriesInstances(
+        ApplicationContextInitializer.class));
+    //从类路径下找到ETA-INF/spring.factories配置的所有ApplicationListener
+    setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+    //从多个配置类中找到有main方法的主配置类
+    this.mainApplicationClass = deduceMainApplicationClass();
+}
+```
+
+（2）运行run方法（启动应用）
+
+```java
+public ConfigurableApplicationContext run(String... args) {
+   StopWatch stopWatch = new StopWatch();
+   stopWatch.start();
+   ConfigurableApplicationContext context = null;
+   FailureAnalyzers analyzers = null;
+   configureHeadlessProperty();
+    
+   //获取SpringApplicationRunListeners；从类路径下META-INF/spring.factories
+   SpringApplicationRunListeners listeners = getRunListeners(args);
+    //回调所有的获取SpringApplicationRunListener.starting()方法
+   listeners.starting();
+   try {
+       //封装命令行参数
+      ApplicationArguments applicationArguments = new DefaultApplicationArguments(
+            args);
+      //准备环境
+      ConfigurableEnvironment environment = prepareEnvironment(listeners,
+            applicationArguments);
+       		//创建环境完成后回调SpringApplicationRunListener.environmentPrepared()；表示环境准备完成
+       
+       //打印springboot图标
+      Banner printedBanner = printBanner(environment);
+       
+       //创建ApplicationContext；决定创建web的ioc还是普通的ioc
+      context = createApplicationContext();
+       
+      analyzers = new FailureAnalyzers(context);
+       //准备上下文环境;将environment保存到ioc中；而且applyInitializers()；
+       //applyInitializers()：回调之前保存的所有的ApplicationContextInitializer的initialize方法
+       //回调所有的SpringApplicationRunListener的contextPrepared()；
+       //
+      prepareContext(context, environment, listeners, applicationArguments,
+            printedBanner);
+       //prepareContext运行完成以后回调所有的SpringApplicationRunListener的contextLoaded（）；
+       
+       //s刷新容器；ioc容器初始化（如果是web应用还会创建嵌入式的Tomcat）；Spring注解版
+       //扫描，创建，加载所有组件的地方；（配置类，组件，自动配置）
+      refreshContext(context);
+       //从ioc容器中获取所有的ApplicationRunner和CommandLineRunner进行回调
+       //ApplicationRunner先回调，CommandLineRunner再回调
+      afterRefresh(context, applicationArguments);
+       //所有的SpringApplicationRunListener回调finished方法
+      listeners.finished(context, null);
+      stopWatch.stop();
+      if (this.logStartupInfo) {
+         new StartupInfoLogger(this.mainApplicationClass)
+               .logStarted(getApplicationLog(), stopWatch);
+      }
+       //整个SpringBoot应用启动完成以后返回启动的ioc容器；
+      return context;
+   }
+   catch (Throwable ex) {
+      handleRunFailure(context, listeners, analyzers, ex);
+      throw new IllegalStateException(ex);
+   }
+}
+```
+
