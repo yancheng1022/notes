@@ -36,6 +36,10 @@
 
 [19. String s = new String("xyz")创建了几个对象？](#19)
 
+[20. 实现多线程的方式？](#20)
+
+[21. 顺序打印A B C](#21)
+
 ### <span id="1">1. Lock和synchronized的区别?</span>
 
 ​	（1）synchronized遇到异常时自动释放锁，lock不会（所以需要在finally中lock.unlock释放锁）
@@ -250,21 +254,260 @@
 
 
 
+#### <span id="20">20. 实现多线程的方式？</span>
+
+1.继承Thread类，重写run方法
+
+2.实现Runnable接口，实现run方法
+
+3.通常为了简便第二中写法，通常用匿名内部类
+
+```java
+Thread a = new Thread(new Runnable() {
+	            public void run() {
+	                System.out.println(Thread.currentThread().getName() + "A");
+	            }
+	     });
+//new Runnable（）不要理解为实现接口
+```
 
 
 
+#### <span id="21">21. 顺序打印A B C</span>   	
+
+（1）方式一：newSingleThreadExecutor
+
+```java
+/**
+ * 我们要做的就是有三个线程a，b，c，这三个线程都有一个方法分别打印A、B、C，问怎么能实现依次打印ABC的功能
+ * @author zhmm
+ */
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class Main {
+    public static void main(String[] args) {
+        Thread a = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("a");
+            }
+        });
+        Thread b = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("b");
+            }
+        });
+        Thread c = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("c");
+            }
+        });
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(a);
+        executorService.submit(b);
+        executorService.submit(c);
+        executorService.shutdown();
+    }
+}
+
+```
+
+（2）方式二.join方法
+
+```java
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Thread a = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("a");
+            }
+        });
+        Thread b = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("b");
+            }
+        });
+        Thread c = new Thread(new Runnable(){
+            public void run() {
+                System.out.println("c");
+            }
+        });
+        a.start();
+        //抢占main方法时间片，直到a执行完才继续执行
+        a.join();
+        b.start();
+        b.join();
+        c.start();
+        c.join();
+
+    }
+}
+
+```
 
 
 
-   	
+#### <span id="22">22. 交替打印A B C？</span>
+
+（1）方法一：利用wait notify flag
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        final Print p = new Print();
+        new Thread(new Runnable(){
+
+            public void run() {
+                while (true){
+                    try {
+                        p.a();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+        new Thread(new Runnable(){
+
+            public void run() {
+                while (true){
+                    try {
+                        p.b();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+        new Thread(new Runnable(){
+
+            public void run() {
+                while (true){
+                    try {
+                        p.c();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}
+
+
+class Print{
+    private int flag = 1;
+    public void a() throws InterruptedException {
+        synchronized (this){
+            while (flag != 1){
+                this.wait();
+            }
+            System.out.println("a");
+            flag = 2;
+            this.notifyAll();
+        }
+    }
+    public void b() throws InterruptedException {
+        synchronized (this){
+            while (flag != 2){
+                this.wait();
+            }
+            System.out.println("b");
+            flag = 3;
+            this.notifyAll();
+        }
+    }
+    public void c() throws InterruptedException {
+        synchronized (this){
+            while (flag != 3){
+                this.wait();
+            }
+            System.out.println("c");
+            flag = 1;
+            this.notifyAll();
+        }
+    }
+}
+```
 
 
 
+（2）利用lock打印
 
+```
+/**
+ * 我们要做的就是有三个线程a，b，c，这三个线程都有一个方法分别打印A、B、C，问怎么能实现依次打印ABC的功能
+ * @author zhmm
+ */
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
+public class Main {
+    private static Lock lock = new ReentrantLock();//通过JDK5中的Lock锁来保证线程的访问的互斥
+    private static int state = 0;
 
+    static class ThreadA extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    lock.lock();
+                    while (state % 3 == 0) {//多线程并发，不能用if，必须用循环测试等待条件，避免虚假唤醒
+                        System.out.println("A");
+                        state++;
+                    }
+                } finally {
+                    lock.unlock();// lock()和unlock()操作结合try/catch使用
+                }
+            }
+        }
+    }
 
+    static class ThreadB extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    lock.lock();
+                    while (state % 3 == 1) {//多线程并发，不能用if，必须用循环测试等待条件，避免虚假唤醒
+                        System.out.println("B");
+                        state++;
 
+                    }
+                } finally {
+                    lock.unlock();// lock()和unlock()操作结合try/catch使用
+                }
+            }
+        }
+    }
+
+    static class ThreadC extends Thread {
+        @Override
+        public void run() {
+            while (true){
+                try {
+                    lock.lock();
+                    while (state % 3 == 2) {//多线程并发，不能用if，必须用循环测试等待条件，避免虚假唤醒
+                        System.out.println("C");
+                        state++;
+                    }
+                } finally {
+                    lock.unlock();// lock()和unlock()操作结合try/catch使用
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new ThreadA().start();
+        new ThreadB().start();
+        new ThreadC().start();
+    }
+}
+
+```
 
 
 
