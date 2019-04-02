@@ -40,6 +40,8 @@
 
 [21. 顺序打印A B C](#21)
 
+[22. ThreadLocal原理？](#22)
+
 ### <span id="1">1. Lock和synchronized的区别?</span>
 
 ​	（1）synchronized遇到异常时自动释放锁，lock不会（所以需要在finally中lock.unlock释放锁）
@@ -511,7 +513,9 @@ public class Main {
 
 
 
+#### <span id="22">22. ThreadLocal原理？</span>
 
+ThreadLocal,本地线程变量，用来存储线程的本地变量。底层实际上是用map容器来存储变量，key是当前线程，value是要存储的值
 
 
 
