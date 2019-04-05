@@ -436,7 +436,7 @@ class Print{
 
 （2）利用lock打印
 
-```
+```java
 /**
  * 我们要做的就是有三个线程a，b，c，这三个线程都有一个方法分别打印A、B、C，问怎么能实现依次打印ABC的功能
  * @author zhmm
